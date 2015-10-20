@@ -19,5 +19,16 @@ public class LinearWind : Wind
 	// Update is called once per frame
 	void Update () 
     {
+        LifeTime -= Time.deltaTime;
+        if (LifeTime <= 0)
+        {
+            die();
+        }
 	}
+
+    private void die() {
+        Debug.Log("Wind die!");
+        GameManager.Instance.deleteLinearWind(this.GetComponent<LinearWind>());
+        GameObject.Destroy(this.gameObject);
+    }
 }

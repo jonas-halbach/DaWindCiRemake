@@ -2,16 +2,29 @@
 using System.Collections;
 using System.Collections.Generic;
 
-public class MouseInput : MimiBehaviour {
+public class MouseInput : MimiBehaviour 
+{
 
     [SerializeField]
     private GameObject m_goLinearWindPrototype;
+    
+    [SerializeField]
+    private float m_fWindLayerHeight = 10;
 
-    public float m_fWindLayerHeight = 10;
+    [SerializeField]
+    private float m_fForceMultiplicatior = 1;
+
+    [SerializeField]
+    private float m_fRadiusMultiplicator = 1;
+
+    [SerializeField]
+    private float m_fLifeTimeMultiplicator = 1;
 
     private List<Vector2> m_listMousePositions;
 
     private GameManager m_gameManager;
+
+    private float m_fWindCreationTime;
 
     public enum MouseButton {
         Left = 0,
@@ -20,48 +33,51 @@ public class MouseInput : MimiBehaviour {
     }
 
 	// Use this for initialization
-	void Start () {
+	void Start () 
+    {
         m_gameManager = GameManager.Instance;
 
         m_listMousePositions = new List<Vector2>();
 	}
 	
 	// Update is called once per frame
-	void Update () {
+	void Update () 
+    {
 	
 	}
 
-    void FixedUpdate() {
+    void FixedUpdate() 
+    {
+
         if (Input.GetMouseButton((int)MouseButton.Left))
         {
             m_listMousePositions.Add(Input.mousePosition);
+            m_fWindCreationTime += Time.deltaTime;
         }
         else if (Input.GetMouseButtonUp((int)MouseButton.Left))
         {
             evaluateMousePositions();
             m_listMousePositions.Clear();
+            m_fWindCreationTime = 0;
         }
     }
 
 
     private void evaluateMousePositions() {
 
-        Vector2 v2OldMousePosition = Vector2.zero;
+        int iListSize = m_listMousePositions.Count;
 
-        for (int i = 0; i < m_listMousePositions.Count; i++) {
+        if (iListSize > 1)
+        {
+            Vector2 v2OldMousePosition = m_listMousePositions[0];
+            Vector2 v2CurrentMousePosition = m_listMousePositions[iListSize - 1];
 
-            Vector2 v2CurrentMousePosition = m_listMousePositions[i];
-
-            if(i > 0 ) {
-                createLinearWind(v2OldMousePosition, v2CurrentMousePosition);
-            }
-
-            v2OldMousePosition = v2CurrentMousePosition;
+            createLinearWind(v2OldMousePosition, v2CurrentMousePosition);
         }
-
     }
 
-    private void createLinearWind(Vector2 _v2WindStartPosition, Vector2 _v2WindEndPosition) {
+    private void createLinearWind(Vector2 _v2WindStartPosition, Vector2 _v2WindEndPosition) 
+    {
                 
                 GameObject windObject = GameObject.Instantiate(m_goLinearWindPrototype);
 
@@ -71,12 +87,18 @@ public class MouseInput : MimiBehaviour {
                 Vector3 v3TrailEndPosition = Camera.main.ScreenToWorldPoint(new Vector3(_v2WindEndPosition.x, _v2WindEndPosition.y, m_fWindLayerHeight));
                 linearWindtrail.SetPosition(1, v3TrailEndPosition);
 
+                float fMagnitudeLengthRate = Vector2.Distance(_v2WindStartPosition, _v2WindEndPosition) / m_fWindCreationTime;
+                float fForce = fMagnitudeLengthRate * m_fForceMultiplicatior;
+                float fLifeTime = fMagnitudeLengthRate * m_fLifeTimeMultiplicator;
+                float fRadius = fMagnitudeLengthRate * m_fRadiusMultiplicator;
+                
+
                 LinearWind linearWind = windObject.GetComponent<LinearWind>();
                 linearWind.Position = v3TrailStartPosition;
                 linearWind.Direction = v3TrailEndPosition - v3TrailStartPosition;
-                linearWind.Force = 100;
-                linearWind.LifeTime = 100;
-                linearWind.Radius = 100;
+                linearWind.Force = fForce;
+                linearWind.LifeTime = fLifeTime;
+                linearWind.Radius = fRadius;
                 
                 m_gameManager.addLinearWind(linearWind);
     }

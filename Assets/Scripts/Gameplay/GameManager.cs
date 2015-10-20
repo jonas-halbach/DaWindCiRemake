@@ -14,14 +14,22 @@ public class GameManager : Singleton<GameManager>
     [SerializeField]
     private List<IInfluenceableByWind> m_listInfluenceablesByWind = new List<IInfluenceableByWind>();
 
+    [SerializeField]
+    private Canvas m_goFinishedScreen;
+
     protected GameManager() { }
+
+    void Awake() 
+    {
+        addBalloonToInfluenceableByWindList();
+    }
 
 	// Use this for initialization
 	void Start () 
     {
-
+        showLevelFinishedCanvas(false);
         initializeAllWinds(); 
-        addBalloonToInfluenceableByWindList();
+        
 	}
 	
 	// Update is called once per frame
@@ -46,6 +54,10 @@ public class GameManager : Singleton<GameManager>
         m_listExistingLinearWinds.Add(_wind);
     }
 
+    public void deleteLinearWind(LinearWind _wind) {
+        m_listExistingLinearWinds.Remove(_wind);
+    }
+
     private void addBalloonToInfluenceableByWindList() 
     {
     
@@ -67,28 +79,45 @@ public class GameManager : Singleton<GameManager>
 
     private void influenceSingleObjectByWind(IInfluenceableByWind _influencableObject) 
     {
-
-        Vector3 v3ObjectPosition = _influencableObject.Position;
-
-        Vector3 v3ResultngWindDirection = new Vector3();
-
-        float fResultingWindForce = 0f;
-
-        foreach(LinearWind wind in m_listExistingLinearWinds) 
+        if(m_listExistingLinearWinds.Count > 0)
         {
-            Ray ray = new Ray(wind.Position, wind.Direction);
+            Vector3 v3ObjectPosition = _influencableObject.Position;
 
-            Vector3 v3NearestPointOnRay = MathHelper.v3GetNearestPointOnRay(ray, v3ObjectPosition);
+            Vector3 v3ResultngWindDirection = new Vector3();
 
-            float fSmallestDistanceObjectWind = MathHelper.fGetSmallestDistanceToStraight(ray, v3NearestPointOnRay, v3ObjectPosition);
+            float fResultingWindForce = 0f;
 
-            if(fSmallestDistanceObjectWind < wind.Radius) {
-                fResultingWindForce += (wind.Radius / fSmallestDistanceObjectWind * wind.Force);
-                v3ResultngWindDirection += wind.Direction.normalized;
+            foreach(LinearWind wind in m_listExistingLinearWinds) 
+            {
+                Ray ray = new Ray(wind.Position, wind.Direction);
+
+                Vector3 v3NearestPointOnRay = MathHelper.v3GetNearestPointOnRay(ray, v3ObjectPosition);
+
+                float fSmallestDistanceObjectWind = MathHelper.fGetSmallestDistanceToStraight(ray, v3NearestPointOnRay, v3ObjectPosition);
+
+                if(fSmallestDistanceObjectWind < wind.Radius) {
+                    fResultingWindForce += (wind.Radius / fSmallestDistanceObjectWind * wind.Force);
+                    v3ResultngWindDirection += wind.Direction.normalized;
+                }
+            }
+
+            if (fResultingWindForce > 0) {
+                _influencableObject.influence(v3ResultngWindDirection.normalized, fResultingWindForce);
             }
         }
+    }
 
-        _influencableObject.influence(v3ResultngWindDirection.normalized, fResultingWindForce);
+    public void addObjectInfluenceableByWind(IInfluenceableByWind _influenceableObject) 
+    {
+        m_listInfluenceablesByWind.Add(_influenceableObject);
+    }
+
+    public void gameWon() {
+        showLevelFinishedCanvas(true);
+    }
+
+    public void showLevelFinishedCanvas(bool _bShow) {
+        m_goFinishedScreen.GetComponent<Canvas>().enabled = _bShow;
     }
 
 

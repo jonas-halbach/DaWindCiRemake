@@ -46,7 +46,7 @@ public class Wind : MimiBehaviour {
 
     
 
-    void die() 
+    protected void die() 
     {
 
         GameObject.Destroy(this.gameObject);
